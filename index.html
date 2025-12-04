@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Sunbay Weather Generator</title></head>
+<body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;">
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+const c=document.getElementById('c'), x=c.getContext('2d');
+
+// Your perfect card drawing code (same as before)
+async function run(){
+  const [w,m]=await Promise.all([
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=temperature_2m_max,temperature_2m_min&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json()),
+    fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction,swell_wave_height&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json())
+  ]);
+
+  // ← SAME drawPerfectCard() function from before (copy-paste it here) →
+  drawPerfectCard(w,m);
+
+  c.toBlob(b=> {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const base64 = fr.result.split(',')[1];
+      fetch('https://api.github.com/repos/YOURNAME/sunbay-weather/contents/sunbay_marina_forecast.png', {
+        method: 'PUT',
+        headers: {Authorization: 'token YOUR_GITHUB_TOKEN', Accept: 'application/vnd.github.v3+json'},
+        body: JSON.stringify({
+          message: 'Update weather card',
+          content: base64,
+          branch: 'main'
+        })
+      });
+    };
+    fr.readAsDataURL(b);
+  }, 'image/png');
+}
+run();
+</script>
+<script>
+// ← PASTE YOUR FULL drawPerfectCard(), wmoCode(), degToCompass() here ↓
+function drawPerfectCard(w,m){/* your full function from before */}
+// ... paste the rest
+</script>
+</body></html>
