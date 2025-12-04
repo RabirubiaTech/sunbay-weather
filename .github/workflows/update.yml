@@ -8,20 +8,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Puppeteer
-        uses: browser-actions/setup-chrome@v1
-      - name: Generate Image
-        uses: browser-actions/browse@v1
+      - uses: actions/setup-node@v4
         with:
-          headless: true
-          url: https://capt-ks.github.io/sunbay-weather/
-          wait-until: networkidle0
+          node-version: '20'
+      - name: Install Puppeteer
+        run: npm install puppeteer
+      - name: Generate and Commit PNG
+        run: |
+          cat > generate.js << 'EOF'
+          const puppeteer = require('puppeteer');
+          (async () => {
+            const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
+            const page = await browser.newPage();
+            await page.goto('https://capt-ks.github.io/sunbay-weather/');
+            await page.waitForTimeout(10000);  // Wait for generation
+            const png = await page.screenshot({type: 'png', fullPage: false});
+            require('fs').writeFileSync('sunbay_marina_forecast.png', png);
+            await browser.close();
+          })();
+          EOF
+          node generate.js
       - name: Commit PNG
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card $(date)"
-          git push
+          git diff --staged --quiet || git commit -m "Update weather card $(date)" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
