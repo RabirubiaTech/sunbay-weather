@@ -2,9 +2,13 @@
 <html><head><meta charset="utf-8"><title>Sunbay Marina Weather</title></head>
 <body style="margin:0;background:#0f172a;">
 <canvas id="c" width="1080" height="1080" style="display:none;"></canvas>
+<h1 style="color:white;text-align:center;padding-top:40vh;font-family:system-ui;">Generating latest weather card...</h1>
 <script>
-const c=document.getElementById('c'), x=c.getContext('2d');
-const GITHUB_TOKEN = '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;  // ← YOUR TOKEN HERE
+// ←←← REPLACE THIS WITH YOUR GITHUB TOKEN (repo scope)
+const GITHUB_TOKEN = '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';
+
+// ←←← YOUR REPO (change only if different)
+const REPO = 'Capt-ks/sunbay-weather';
 
 async function run(){
   const [w,m]=await Promise.all([
@@ -14,21 +18,37 @@ async function run(){
 
   drawCard(w,m);
 
+  // Convert canvas to base64 and commit to GitHub
   c.toBlob(blob => {
-    const r = new FileReader();
-    r.onload = () => {
-      const b64 = r.result.split(',')[1];
-      fetch('https://api.github.com/repos/Capt-ks/sunbay-weather/contents/sunbay_marina_forecast.png', {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1];
+      fetch(`https://api.github.com/repos/${REPO}/contents/sunbay_marina_forecast.png`, {
         method: 'PUT',
-        headers: {Authorization: `token ${GITHUB_TOKEN}`},
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        },
         body: JSON.stringify({
-          message: `Update - ${new Date().toISOString()}`,
-          content: b64,
+          message: `Update weather card - ${new Date().toISOString()}`,
+          content: base64,
           branch: 'main'
         })
-      });
+      })
+      .then(r => r.json())
+      .then(data => {
+        document.body.innerHTML = `<div style="color:white;text-align:center;padding-top:40vh;font-family:system-ui;">
+          <h1>Weather Card Updated!</h1>
+          <img src="sunbay_marina_forecast.png?t=${Date.now()}" style="max-width:90%;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+          <p>Your permanent link:<br>
+          <a href="https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png" style="color:#a5f3fc;">
+            https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png
+          </a></p>
+        </div>`;
+      })
+      .catch(e => document.body.innerHTML += `<p style="color:red;">Error committing: ${e.message}</p>`);
     };
-    r.readAsDataURL(blob);
+    reader.readAsDataURL(blob);
   }, 'image/png');
 }
 
@@ -72,12 +92,4 @@ function drawCard(w,m){
     x.fillText(`${d} → ${hi}° / ${lo}°`,L,760+i*68);
   });
 
-  x.font='italic 38px system-ui'; x.fillStyle='#64748b'; x.textAlign='center';
-  x.fillText('Powered by Open-Meteo • Updated every 4 hours',540,1060);
-}
-function wmo(c){const m={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",51:"Light rain",53:"Rain",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"};return m[c]||"Weather";}
-function compass(d){const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];return dirs[Math.round(d/22.5)%16];}
-
-run();
-</script>
-</body></html>
+  x.font='italic
