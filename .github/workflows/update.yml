@@ -2,23 +2,10 @@ name: Update Sunbay Weather Card
 on:
   schedule:
     - cron: '0 */4 * * *'  # Every 4 hours
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      - name: Fetch Generated PNG
-        run: |
-          curl -s https://capt-ks.github.io/sunbay-weather/ > /dev/null
-          sleep 15  # Wait for page to generate PNG
-          curl -s https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png -o sunbay_marina_forecast.png
-      - name: Commit PNG if changed
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card $(date)" && git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Trigger PNG Generation
+        run: curl -s https://capt-ks.github.io/sunbay-weather/ > /dev/null
