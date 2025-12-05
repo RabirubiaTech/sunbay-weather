@@ -49,13 +49,13 @@ jobs:
             ctx.font = '600 54px system-ui';
             ctx.fillText(astTime.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}),540,120);
             ctx.font = 'italic 42px system-ui'; ctx.fillStyle = '#64748b';
-            ctx.fillText(`Updated ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,540,170);
+            ctx.fillText(`Fajardo Bay | Updated ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,540,170);
 
             const L = 150, R = 570;
             ctx.textAlign = 'left';
             ctx.font = 'bold 58px system-ui'; ctx.fillStyle = '#1e40af';
             ctx.fillText('Weather', L, 280);
-            ctx.font = '900 170px system-ui'; ctx.fillStyle = '#164e63';
+            ctx.font = '900 120px system-ui'; ctx.fillStyle = '#164e63';
             ctx.fillText(`${Math.round(cur.temperature_2m)}°`, L, 460);
             ctx.font = '56px system-ui'; ctx.fillStyle = '#475569';
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, L, 510);
@@ -80,7 +80,7 @@ jobs:
             });
 
             ctx.font = 'italic 38px system-ui'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'center';
-            ctx.fillText('Powered by Open-Meteo • Updated every 4 hours',540,1060);
+            ctx.fillText('Powered by Rabirubia-API • Updated every 4 hours',540,1060);
           }
           function wmo(c){const m={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",51:"Light rain",53:"Rain",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"};return m[c]||"Weather";}
           function compass(d){const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];return dirs[Math.round(d/22.5)%16];}
