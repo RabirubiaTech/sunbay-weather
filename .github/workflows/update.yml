@@ -12,13 +12,13 @@ jobs:
         with:
           node-version: '20'
       - name: Install Dependencies
-        run: npm install canvas
+        run: npm install canvas node-fetch
       - name: Generate PNG
         run: |
           cat > generate.js << 'EOF'
-          const { createCanvas, loadImage } = require('canvas');
-          const fs = require('fs');
+          const { createCanvas } = require('canvas');
           const fetch = require('node-fetch');
+          const fs = require('fs');
           const canvas = createCanvas(1080, 1080);
           const ctx = canvas.getContext('2d');
 
