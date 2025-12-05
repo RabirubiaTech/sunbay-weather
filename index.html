@@ -1,114 +1,74 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Sunbay Marina Weather</title>
-  <style>body{margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh;}</style>
-</head>
-<body>
+<html><head><meta charset="utf-8"><title>Sunbay Marina Weather</title></head>
+<body style="margin:0;background:#0f172a;color:white;font-family:system-ui;text-align:center;padding-top:40vh;">
+<h1>Sunbay Marina Weather Generator</h1>
+<p>PNG generated and committed automatically every 4 hours.</p>
+<p>Your live card: <a href="sunbay_marina_forecast.png" style="color:#a5f3fc;">https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png</a></p>
 <canvas id="c" width="1080" height="1080" style="display:none;"></canvas>
-<div id="msg" style="color:white;font-family:system-ui;text-align:center;">
-  <h1>Generating Sunbay Marina Weather Card...</h1>
-</div>
-
 <script>
-// ←←← REPLACE THIS LINE WITH YOUR GITHUB TOKEN (repo scope)
-const GITHUB_TOKEN = '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';
-
+// Optional: Manual generation for testing (no token needed here)
 const c = document.getElementById('c');
 const x = c.getContext('2d');
 
-async function run(){
-  const [w, m] = await Promise.all([
+async function testGenerate() {
+  document.body.innerHTML += '<p>Testing generation...</p>';
+  const [w,m]=await Promise.all([
     fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=temperature_2m_max,temperature_2m_min&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json()),
     fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction,swell_wave_height&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json())
   ]);
 
-  drawCard(w, m);
-
-  // Wait a moment for canvas to render
-  await new Promise(r => setTimeout(r, 1000));
-
-  c.toBlob(blob => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      fetch('https://api.github.com/repos/Capt-ks/sunbay-weather/contents/sunbay_marina_forecast.png', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-          message: `Update - ${new Date().toISOString()}`,
-          content: base64,
-          branch: 'main'
-        })
-      })
-      .then(() => {
-        document.getElementById('msg').innerHTML = `
-          <h1 style="color:#a5f3fc;">Weather Card Updated!</h1>
-          <img src="sunbay_marina_forecast.png?t=${Date.now()}" style="max-width:90%;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.6);">
-          <p style="margin-top:20px;color:#a5f3fc;font-size:18px;">
-            Your permanent link:<br>
-            <a href="https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png" style="color:#fff;">
-              https://capt-ks.github.io/sunbay-weather/sunbay_marina_forecast.png
-            </a>
-          </p>
-        `;
-      });
-    };
-    reader.readAsDataURL(blob);
-  }, 'image/png');
+  drawCard(w,m);
+  document.body.innerHTML += '<p>Canvas rendered! Check the PNG link above.</p>';
 }
 
-function drawCard(w, m) {
-  const cur = w.current, daily = w.daily, h = m.hourly;
-  const grad = x.createLinearGradient(0,0,0,1080);
+function drawCard(w,m){
+  const cur=w.current, daily=w.daily, h=m.hourly;
+  const grad=x.createLinearGradient(0,0,0,1080);
   grad.addColorStop(0,'#a5f3fc'); grad.addColorStop(1,'#ecfeff');
-  x.fillStyle = grad; x.fillRect(0,0,1080,1080);
+  x.fillStyle=grad; x.fillRect(0,0,1080,1080);
 
-  x.textAlign = 'center'; x.fillStyle = '#155e75';
-  x.font = '600 54px system-ui';
+  x.textAlign='center'; x.fillStyle='#155e75';
+  x.font='600 54px system-ui';
   x.fillText(new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}),540,120);
-  x.font = 'italic 42px system-ui'; x.fillStyle = '#64748b';
+  x.font='italic 42px system-ui'; x.fillStyle='#64748b';
   x.fillText(`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,540,170);
 
-  const L = 150, R = 570;
-  x.textAlign = 'left';
-  x.font = 'bold 58px system-ui'; x.fillStyle = '#1e40af';
+  const L=150, R=570;
+  x.textAlign='left';
+  x.font='bold 58px system-ui'; x.fillStyle='#1e40af';
   x.fillText('Weather',L,280);
-  x.font = '900 170px system-ui'; x.fillStyle = '#164e63';
+  x.font='900 170px system-ui'; x.fillStyle='#164e63';
   x.fillText(`${Math.round(cur.temperature_2m)}°`,L,460);
-  x.font = '56px system-ui'; x.fillStyle = '#475569';
+  x.font='56px system-ui'; x.fillStyle='#475569';
   x.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`,L,510);
   x.fillText(wmo(cur.weathercode),L,570);
   x.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`,L,630);
 
-  x.font = 'bold 58px system-ui'; x.fillStyle = '#1e40af';
+  x.font='bold 58px system-ui'; x.fillStyle='#1e40af';
   x.fillText('Marine',R,280);
-  x.font = '700 120px system-ui'; x.fillStyle = '#164e63';
+  x.font='700 120px system-ui'; x.fillStyle='#164e63';
   x.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`,R,460);
-  x.font = '56px system-ui'; x.fillStyle = '#475569';
+  x.font='56px system-ui'; x.fillStyle='#475569';
   x.fillText(`Today • ${compass(h.wave_direction[12])}`,R,510);
-  x.font = '64px system-ui'; x.fillStyle = '#1e293b';
+  x.font='64px system-ui'; x.fillStyle='#1e293b';
   x.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`,R,620);
   x.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`,R,700);
 
-  x.font = '48px system-ui'; x.fillStyle = '#1e293b';
-  ['Today','Tomorrow','Day After'].forEach((d,i) => {
-    const hi = Math.round(daily.temperature_2m_max[i]);
-    const lo = Math.round(daily.temperature_2m_min[i]);
-    x.fillText(`${d} → ${hi}° / ${lo}°`, L, 760 + i*68);
+  x.font='48px system-ui'; x.fillStyle='#1e293b';
+  ['Today','Tomorrow','Day After'].forEach((d,i)=>{
+    const hi=Math.round(daily.temperature_2m_max[i]);
+    const lo=Math.round(daily.temperature_2m_min[i]);
+    x.fillText(`${d} → ${hi}° / ${lo}°`,L,760+i*68);
   });
 
-  x.font = 'italic 38px system-ui'; x.fillStyle = '#64748b'; x.textAlign = 'center';
+  x.font='italic 38px system-ui'; x.fillStyle='#64748b'; x.textAlign='center';
   x.fillText('Powered by Open-Meteo • Updated every 4 hours',540,1060);
 }
 function wmo(c){const m={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",51:"Light rain",53:"Rain",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"};return m[c]||"Weather";}
 function compass(d){const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];return dirs[Math.round(d/22.5)%16];}
 
-run();
+// Test manual generation
+testGenerate();
 </script>
 </body>
 </html>
