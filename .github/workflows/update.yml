@@ -8,17 +8,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Puppeteer
-        uses: mujo-code/puppeteer-headful@master
-        env:
-          CI: 'true'
-      - name: Generate PNG with Puppeteer
-        uses: lannonbr/puppeteer-screenshot-action@1.0.0
+      - uses: actions/setup-node@v4
         with:
-          url: 'https://capt-ks.github.io/sunbay-weather/'
-          filepath: 'sunbay_marina_forecast.png'
-          fullpage: true
-          wait: 10000  # Wait 10 seconds for generation
+          node-version: '20'
+      - name: Install Puppeteer
+        run: npm install puppeteer
+      - name: Install System Dependencies for Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libasound2
+      - name: Generate PNG with Puppeteer
+        run: |
+          cat > generate.js << 'EOF'
+          const puppeteer = require('puppeteer');
+          const fs = require('fs');
+          (async () => {
+            const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox']});
+            const page = await browser.newPage();
+            await page.goto('https://capt-ks.github.io/sunbay-weather/', {waitUntil: 'networkidle0'});
+            await page.waitForTimeout(10000);  // Wait for canvas generation
+            const png = await page.screenshot({type: 'png', fullPage: false});
+            fs.writeFileSync('sunbay_marina_forecast.png', png);
+            await browser.close();
+            console.log('PNG generated and saved!');
+          })();
+          EOF
+          node generate.js
       - name: Commit PNG if changed
         run: |
           git config --local user.email "action@github.com"
