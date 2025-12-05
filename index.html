@@ -3,8 +3,8 @@
 <body style="margin:0;background:#0f172a;">
 <canvas id="c" width="1080" height="1080" style="display:none;"></canvas>
 <script>
-// YOUR GITHUB TOKEN (repo scope)
-const GITHUB_TOKEN = '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';  // ← Replace with your PAT
+const c=document.getElementById('c'), x=c.getContext('2d');
+const GITHUB_TOKEN = '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;  // ← YOUR TOKEN HERE
 
 async function run(){
   const [w,m]=await Promise.all([
@@ -15,31 +15,28 @@ async function run(){
   drawCard(w,m);
 
   c.toBlob(blob => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
+    const r = new FileReader();
+    r.onload = () => {
+      const b64 = r.result.split(',')[1];
       fetch('https://api.github.com/repos/Capt-ks/sunbay-weather/contents/sunbay_marina_forecast.png', {
         method: 'PUT',
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json'
-        },
+        headers: {Authorization: `token ${GITHUB_TOKEN}`},
         body: JSON.stringify({
-          message: `Update weather card - ${new Date().toISOString()}`,
-          content: base64,
+          message: `Update - ${new Date().toISOString()}`,
+          content: b64,
           branch: 'main'
         })
-      }).then(r=>r.json()).then(console.log).catch(console.error);
+      });
     };
-    reader.readAsDataURL(blob);
+    r.readAsDataURL(blob);
   }, 'image/png');
 }
 
 function drawCard(w,m){
   const cur=w.current, daily=w.daily, h=m.hourly;
-  const grad=x.createLinearGradient(0,0,0,1080);
-  grad.addColorStop(0,'#a5f3fc'); grad.addColorStop(1,'#ecfeff');
-  x.fillStyle=grad; x.fillRect(0,0,1080,1080);
+  const g=x.createLinearGradient(0,0,0,1080);
+  g.addColorStop(0,'#a5f3fc'); g.addColorStop(1,'#ecfeff');
+  x.fillStyle=g; x.fillRect(0,0,1080,1080);
 
   x.textAlign='center'; x.fillStyle='#155e75';
   x.font='600 54px system-ui';
