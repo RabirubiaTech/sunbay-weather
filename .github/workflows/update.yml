@@ -8,35 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
       - name: Install Puppeteer
-        run: npm install puppeteer
-      - name: Generate PNG
-        run: |
-          cat > generate.js << 'EOF'
-          const puppeteer = require('puppeteer');
-          const fs = require('fs');
-          (async () => {
-            const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox']});
-            const page = await browser.newPage();
-            await page.goto('https://capt-ks.github.io/sunbay-weather/', {waitUntil: 'networkidle0'});
-            await page.waitForTimeout(10000);  // Wait for generation
-            const png = await page.screenshot({type: 'png'});
-            fs.writeFileSync('sunbay_marina_forecast.png', png);
-            await browser.close();
-            console.log('PNG generated!');
-          })();
-          EOF
-          node generate.js
-      - name: Commit PNG
+        uses: mujo-code/puppeteer-headful@master
+        env:
+          CI: 'true'
+      - name: Generate PNG with Puppeteer
+        uses: lannonbr/puppeteer-screenshot-action@1.0.0
+        with:
+          url: 'https://capt-ks.github.io/sunbay-weather/'
+          filepath: 'sunbay_marina_forecast.png'
+          fullpage: true
+          wait: 10000  # Wait 10 seconds for generation
+      - name: Commit PNG if changed
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add sunbay_marina_forecast.png
           if git diff --staged --quiet; then
-            echo "No changes"
+            echo "No changes to commit"
           else
             git commit -m "Update weather card $(date)"
             git push
