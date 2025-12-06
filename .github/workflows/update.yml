@@ -57,7 +57,7 @@ jobs:
             ctx.fillText('Weather', L, 280);
             ctx.font = '900 90px system-ui'; ctx.fillStyle = '#164e63';
             ctx.fillText(`${Math.round(cur.temperature_2m)}°`, L, 460);
-            ctx.font = '56px system-ui'; ctx.fillStyle = '#475569';
+            ctx.font = '50px system-ui'; ctx.fillStyle = '#475569';
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, L, 510);
             ctx.fillText(wmo(cur.weathercode), L, 570);
             ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, L, 630);
@@ -66,7 +66,7 @@ jobs:
             ctx.fillText('Marine', R, 280);
             ctx.font = '700 90px system-ui'; ctx.fillStyle = '#164e63';
             ctx.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`, R, 460);
-            ctx.font = '56px system-ui'; ctx.fillStyle = '#475569';
+            ctx.font = '50px system-ui'; ctx.fillStyle = '#475569';
             ctx.fillText(`Today • ${compass(h.wave_direction[12])}`, R, 510);
             ctx.font = '50px system-ui'; ctx.fillStyle = '#1e293b';
             ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, R, 620);
