@@ -61,7 +61,9 @@ jobs:
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, L, 510);
             ctx.fillText(wmo(cur.weathercode), L, 570);
             ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, L, 630);
-
+            ctx.font = '54px system-ui';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText(`Gusts ${Math.round(cur.windgusts_10m)} mph`, L, 685);
             ctx.font = 'bold 58px system-ui'; ctx.fillStyle = '#1e40af';
             ctx.fillText('Marine', R, 280);
             ctx.font = '700 90px system-ui'; ctx.fillStyle = '#164e63';
