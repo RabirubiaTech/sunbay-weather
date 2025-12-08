@@ -3,20 +3,24 @@ on:
   schedule:
     - cron: '0 */4 * * *'
   workflow_dispatch:
+
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install Dependencies
         run: npm install canvas node-fetch@2
-      - name: Generate PNG with Correct AST Time
+
+      - name: Generate PNG with Logo & Correct AST Time
         run: |
           cat > generate.js << 'EOF'
-          const { createCanvas } = require('canvas');
+          const { createCanvas, loadImage } = require('canvas');
           const fetch = require('node-fetch');
           const fs = require('fs');
 
@@ -29,70 +33,116 @@ jobs:
           const localTime = new Date(now.getTime() + astOffset * 60 * 1000);
 
           async function run() {
-            const [w, m] = await Promise.all([
+            const [w, m, logoImg] = await Promise.all([
               fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=temperature_2m_max,temperature_2m_min&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json()),
-              fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction,swell_wave_height&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json())
+              fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction,swell_wave_height&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json()),
+              loadImage("https://static.wixstatic.com/media/80c250_bd229fa4f41b486c8f75348263937e67~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo%20RWeather%20Round%20-%20Transparent.png")
             ]);
 
-            drawCard(w, m, localTime);
+            drawCard(w, m, localTime, logoImg);
             fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer('image/png'));
-            console.log('PNG generated with correct AST time!');
+            console.log('PNG generated with logo and correct AST time!');
           }
 
-          function drawCard(w, m, astTime) {
-            const cur = w.current, daily = w.daily, h = m.hourly;
-            const grad = ctx.createLinearGradient(0,0,0,1080);
-            grad.addColorStop(0,'#a5f3fc'); grad.addColorStop(1,'#ecfeff');
-            ctx.fillStyle = grad; ctx.fillRect(0,0,1080,1080);
+          }
 
-            ctx.textAlign = 'center'; ctx.fillStyle = '#155e75';
+          function drawCard(w, m, astTime, logo) {
+            const cur = w.current, daily = w.daily, h = m.hourly;
+
+            // Background gradient
+            const grad = ctx.createLinearGradient(0,0,0,1080);
+            grad.addColorStop(0,'#a5f3fc');
+            grad.addColorStop(1,'#ecfeff');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,1080,1080);
+
+            // === LOGO in top-left ===
+            const logoSize = 180; // size in pixels
+            const logoPadding = 40;
+            ctx.drawImage(logo, logoPadding, logoPadding, logoSize, logoSize);
+
+            // Title & time (moved down a bit to avoid overlapping logo)
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#155e75';
             ctx.font = '600 54px system-ui';
-            ctx.fillText(astTime.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}),540,120);
-            ctx.font = 'italic 42px system-ui'; ctx.fillStyle = '#64748b';
-            ctx.fillText(`Fajardo Bay, PR Updated ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,540,170);
+            ctx.fillText(astTime.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}),540,140);
+
+            ctx.font = 'italic 42px system-ui';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(`Fajardo Bay, PR • Updated ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,540,195);
 
             const L = 150, R = 570;
+
+            // Weather column
             ctx.textAlign = 'left';
-            ctx.font = 'bold 48px system-ui'; ctx.fillStyle = '#1e40af';
-            ctx.fillText('Weather', L, 280);
-            ctx.font = '900 80px system-ui'; ctx.fillStyle = '#164e63';
-            ctx.fillText(`${Math.round(cur.temperature_2m)}°`, L, 460);
-            ctx.font = '40px system-ui'; ctx.fillStyle = '#475569';
-            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, L, 510);
-            ctx.fillText(wmo(cur.weathercode), L, 570);
-            ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, L, 630);
+            ctx.font = 'bold 48px system-ui';
+            ctx.fillStyle = '#1e40af';
+            ctx.fillText('Weather', L, 320);
 
-            ctx.font = 'bold 48px system-ui'; ctx.fillStyle = '#1e40af';
-            ctx.fillText('Marine', R, 280);
-            ctx.font = '700 80px system-ui'; ctx.fillStyle = '#164e63';
-            ctx.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`, R, 460);
-            ctx.font = '40px system-ui'; ctx.fillStyle = '#475569';
-            ctx.fillText(`Today • ${compass(h.wave_direction[12])}`, R, 510);
-            ctx.font = '40px system-ui'; ctx.fillStyle = '#1e293b';
-            ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, R, 620);
-            ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, R, 700);
+            ctx.font = '900 80px system-ui';
+            ctx.fillStyle = '#164e63';
+            ctx.fillText(`${Math.round(cur.temperature_2m)}°`, L, 500);
 
-            ctx.font = '40px system-ui'; ctx.fillStyle = '#1e293b';
+            ctx.font = '40px system-ui';
+            ctx.fillStyle = '#475569';
+            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, L, 550);
+            ctx.fillText(wmo(cur.weathercode), L, 610);
+            ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, L, 670);
+
+            // Marine column
+            ctx.font = 'bold 48px system-ui';
+            ctx.fillStyle = '#1e40af';
+            ctx.fillText('Marine', R, 320);
+
+            ctx.font = '700 80px system-ui';
+            ctx.fillStyle = '#164e63';
+            ctx.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`, R, 500);
+
+            ctx.font = '40px system-ui';
+            ctx.fillStyle = '#475569';
+            ctx.fillText(`Today • ${compass(h.wave_direction[12])}`, R, 550);
+
+            ctx.font = '40px system-ui';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, R, 660);
+            ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, R, 740);
+
+            // 3-day forecast
+            ctx.font = '40px system-ui';
+            ctx.fillStyle = '#1e293b';
             ['Today','Tomorrow','Day After'].forEach((d,i) => {
               const hi = Math.round(daily.temperature_2m_max[i]);
               const lo = Math.round(daily.temperature_2m_min[i]);
-              ctx.fillText(`${d} → ${hi}° / ${lo}°`, L, 760 + i*68);
+              ctx.fillText(`${d} → ${hi}° / ${lo}°`, L, 800 + i*68);
             });
 
-            ctx.font = 'italic 38px system-ui'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'center';
+            // Footer
+            ctx.font = 'italic 38px system-ui';
+            ctx.fillStyle = '#64748b';
+            ctx.textAlign = 'center';
             ctx.fillText('Powered by Rabirubia-API • Updated every 4 hours',540,1060);
           }
-          function wmo(c){const m={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",51:"Light rain",53:"Rain",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"};return m[c]||"Weather";}
-          function compass(d){const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];return dirs[Math.round(d/22.5)%16];}
+
+          function wmo(c){
+            const m={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",51:"Light rain",53:"Rain",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"};
+            return m[c]||"Weather";
+          }
+
+          function compass(d){
+            const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+            return dirs[Math.round(d/22.5)%16];
+          }
 
           run();
           EOF
+
           node generate.js
+
       - name: Commit PNG
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card $(date)" && git push
+          git diff --staged --quiet || git commit -m "Update weather card with logo $(date)" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
