@@ -27,7 +27,7 @@ jobs:
           const canvas = createCanvas(1080, 1080);
           const ctx = canvas.getContext('2d');
 
-          // Puerto Rico = UTC-4, no DST → fixed offset
+          // Puerto Rico = UTC-4, no DST -> fixed offset
           const now = new Date();
           const astOffset = -4 * 60; // minutes
           const localTime = new Date(now.getTime() + astOffset * 60 * 1000);
@@ -42,8 +42,6 @@ jobs:
             drawCard(w, m, localTime, logoImg);
             fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer('image/png'));
             console.log('PNG generated with logo and correct AST time!');
-          }
-
           }
 
           function drawCard(w, m, astTime, logo) {
