@@ -1,5 +1,4 @@
 name: Update Sunbay Weather Card
-
 on:
   schedule:
     - cron: '0 */4 * * *'
@@ -8,10 +7,8 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -52,12 +49,14 @@ jobs:
             const daily = w.daily;
             const h = m.hourly;
 
+            // Background
             const grad = ctx.createLinearGradient(0,0,0,1080);
             grad.addColorStop(0, '#a5f3fc');
             grad.addColorStop(1, '#ecfeff');
             ctx.fillStyle = grad;
             ctx.fillRect(0,0,1080,1080);
 
+            // === LOGO + HEADER ===
             const logoSize = 200;
             const margin = 60;
             const logoX = margin;
@@ -79,38 +78,53 @@ jobs:
             ctx.font = 'italic 42px system-ui';
             ctx.fillText(`Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
 
+            // === MAIN CONTENT ===
             const contentTop = 320;
             const LEFT = 140;
             const RIGHT = 580;
 
+            // WEATHER COLUMN
             ctx.textAlign = 'left';
-            ctx.font = 'bold 52px system-ui';
             ctx.fillStyle = '#1e40af';
+            ctx.font = 'bold 46px system-ui';
             ctx.fillText('Weather', LEFT, contentTop);
 
-            ctx.font = '900 92px system-ui';
+            let y = contentTop + 90;
+
+            ctx.font = '900 78px system-ui';
             ctx.fillStyle = '#164e63';
-            ctx.fillText(`${Math.round(cur.temperature_2m)}°`, LEFT, contentTop + 160);
+            ctx.fillText(`${Math.round(cur.temperature_2m)}°`, LEFT, y);
+            y += 70;
 
-            ctx.font = '44px system-ui';
+            ctx.font = '38px system-ui';
             ctx.fillStyle = '#475569';
-            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, LEFT, contentTop + 230);
-            ctx.fillText(wmo(cur.weathercode), LEFT, contentTop + 290);
-            ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, LEFT, contentTop + 350);
+            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, LEFT, y);
+            y += 42;
 
-            ctx.fillText(`Rain: ${cur.rain?.toFixed(2) || 0} in/hr`, LEFT, contentTop + 410);
+            ctx.fillText(wmo(cur.weathercode), LEFT, y);
+            y += 42;
+
+            ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, LEFT, y);
+            y += 42;
+
+            ctx.fillText(`Rain: ${cur.rain?.toFixed(2) || 0} in/hr`, LEFT, y);
+            y += 42;
+
             const precipProb = w.hourly.precipitation_probability[0];
-            ctx.fillText(`Chance: ${precipProb}%`, LEFT, contentTop + 460);
+            ctx.fillText(`Chance: ${precipProb}%`, LEFT, y);
+            y += 42;
 
             const todayRain = w.daily.precipitation_sum[0];
             const todayProb = w.daily.precipitation_probability_max[0];
-            ctx.fillText(`Today: ${todayRain.toFixed(2)} in • ${todayProb}%`, LEFT, contentTop + 520);
+            ctx.fillText(`Today: ${todayRain.toFixed(2)} in • ${todayProb}%`, LEFT, y);
+            y += 42;
 
             const tomorrowRain = w.daily.precipitation_sum[1];
             const tomorrowProb = w.daily.precipitation_probability_max[1];
-            ctx.fillText(`Tomorrow: ${tomorrowRain.toFixed(2)} in • ${tomorrowProb}%`, LEFT, contentTop + 580);
+            ctx.fillText(`Tomorrow: ${tomorrowRain.toFixed(2)} in • ${tomorrowProb}%`, LEFT, y);
+            y += 52;
 
-            ctx.font = 'italic 40px system-ui';
+            ctx.font = 'italic 34px system-ui';
             ctx.fillStyle = '#334155';
 
             let summary = "";
@@ -122,32 +136,42 @@ jobs:
             else if (cur.windspeed_10m >= 12) summary += "Moderate winds.";
             else summary += "Light winds.";
 
-            ctx.fillText(summary, LEFT, contentTop + 650);
+            ctx.fillText(summary, LEFT, y);
+            y += 60;
 
-            ctx.font = 'bold 52px system-ui';
+            // MARINE COLUMN
+            ctx.font = 'bold 46px system-ui';
             ctx.fillStyle = '#1e40af';
             ctx.fillText('Marine', RIGHT, contentTop);
 
-            ctx.font = '700 92px system-ui';
-            ctx.fillStyle = '#164e63';
-            ctx.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`, RIGHT, contentTop + 160);
+            let my = contentTop + 90;
 
-            ctx.font = '44px system-ui';
+            ctx.font = '700 78px system-ui';
+            ctx.fillStyle = '#164e63';
+            ctx.fillText(`${(h.wave_height[12]*3.28).toFixed(1)} ft`, RIGHT, my);
+            my += 70;
+
+            ctx.font = '38px system-ui';
             ctx.fillStyle = '#475569';
-            ctx.fillText(`Today • ${compass(h.wave_direction[12])}`, RIGHT, contentTop + 230);
+            ctx.fillText(`Today • ${compass(h.wave_direction[12])}`, RIGHT, my);
+            my += 42;
 
             ctx.fillStyle = '#1e293b';
-            ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, RIGHT, contentTop + 310);
-            ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, RIGHT, contentTop + 370);
+            ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, RIGHT, my);
+            my += 42;
 
-            ctx.font = '44px system-ui';
+            ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, RIGHT, my);
+            my += 52;
+
+            ctx.font = '38px system-ui';
             ctx.fillStyle = '#1e293b';
             ['Today','Tomorrow','Day After'].forEach((day,i) => {
               const hi = Math.round(daily.temperature_2m_max[i]);
               const lo = Math.round(daily.temperature_2m_min[i]);
-              ctx.fillText(`${day} → ${hi}° / ${lo}°`, LEFT, contentTop + 460 + i*72);
+              ctx.fillText(`${day} → ${hi}° / ${lo}°`, RIGHT, my + i*48);
             });
 
+            // FOOTER
             ctx.textAlign = 'center';
             ctx.font = 'italic 38px system-ui';
             ctx.fillStyle = '#64748b';
