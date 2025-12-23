@@ -97,6 +97,21 @@ jobs:
             ctx.fillText(wmo(cur.weathercode), LEFT, contentTop + 290);
             ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, LEFT, contentTop + 350);
 
+// Rain / precipitation
+ctx.fillText(`Rain: ${cur.rain?.toFixed(2) || 0} in/hr`, LEFT, contentTop + 410);
+
+const precipProb = w.hourly.precipitation_probability[0];
+ctx.fillText(`Chance: ${precipProb}%`, LEFT, contentTop + 460);
+
+// Daily precipitation forecast
+const todayRain = w.daily.precipitation_sum[0];
+const todayProb = w.daily.precipitation_probability_max[0];
+ctx.fillText(`Today: ${todayRain.toFixed(2)} in • ${todayProb}%`, LEFT, contentTop + 520);
+
+const tomorrowRain = w.daily.precipitation_sum[1];
+const tomorrowProb = w.daily.precipitation_probability_max[1];
+ctx.fillText(`Tomorrow: ${tomorrowRain.toFixed(2)} in • ${tomorrowProb}%`, LEFT, contentTop + 580);
+
             // Marine column
             ctx.font = 'bold 52px system-ui';
             ctx.fillStyle = '#1e40af';
