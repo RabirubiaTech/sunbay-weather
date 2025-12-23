@@ -124,7 +124,7 @@ jobs:
             ctx.fillText(`Tomorrow: ${tomorrowRain.toFixed(2)} in • ${tomorrowProb}%`, LEFT, y);
             y += 52;
 
-            ctx.font = 'italic 34px system-ui';
+            ctx.font = 'italic bold 34px system-ui';
             ctx.fillStyle = '#334155';
 
             let summary = "";
