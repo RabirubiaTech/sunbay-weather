@@ -1,4 +1,5 @@
 name: Update Sunbay Weather Card
+
 on:
   schedule:
     - cron: '0 */4 * * *'
@@ -7,16 +8,22 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install Dependencies
-        run: npm install canvas node-fetch@2
+        run: |
+          set -e
+          npm install canvas node-fetch@2
 
       - name: Generate Perfect Weather Card
         run: |
+          set -e
           cat > generate.js << 'EOF'
           const { createCanvas, loadImage } = require('canvas');
           const fetch = require('node-fetch');
@@ -30,7 +37,7 @@ jobs:
 
           async function run() {
             const [w, m, logo] = await Promise.all([
-              fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=temperature_2m_max,temperature_2m_min&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json()),
+              fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation,rain,showers&hourly=precipitation_probability,precipitation,rain,showers&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json()),
               fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json()),
               loadImage("https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RWRoundLogoTransp.png")
             ]);
@@ -45,14 +52,12 @@ jobs:
             const daily = w.daily;
             const h = m.hourly;
 
-            // Background
             const grad = ctx.createLinearGradient(0,0,0,1080);
             grad.addColorStop(0, '#a5f3fc');
             grad.addColorStop(1, '#ecfeff');
             ctx.fillStyle = grad;
             ctx.fillRect(0,0,1080,1080);
 
-            // === LOGO + HEADER (top banner) ===
             const logoSize = 200;
             const margin = 60;
             const logoX = margin;
@@ -61,7 +66,6 @@ jobs:
 
             ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
 
-            // Text right of logo, vertically centered
             const textX = logoX + logoSize + 50;
 
             ctx.textAlign = 'left';
@@ -75,13 +79,10 @@ jobs:
             ctx.font = 'italic 42px system-ui';
             ctx.fillText(`Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
 
-            // === MAIN CONTENT (centered below header) ===
             const contentTop = 320;
-
             const LEFT = 140;
             const RIGHT = 580;
 
-            // Weather column
             ctx.textAlign = 'left';
             ctx.font = 'bold 52px system-ui';
             ctx.fillStyle = '#1e40af';
@@ -97,22 +98,32 @@ jobs:
             ctx.fillText(wmo(cur.weathercode), LEFT, contentTop + 290);
             ctx.fillText(`Wind ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, LEFT, contentTop + 350);
 
-            // Rain / precipitation
             ctx.fillText(`Rain: ${cur.rain?.toFixed(2) || 0} in/hr`, LEFT, contentTop + 410);
-            
             const precipProb = w.hourly.precipitation_probability[0];
             ctx.fillText(`Chance: ${precipProb}%`, LEFT, contentTop + 460);
 
-            // Daily precipitation forecast
             const todayRain = w.daily.precipitation_sum[0];
             const todayProb = w.daily.precipitation_probability_max[0];
             ctx.fillText(`Today: ${todayRain.toFixed(2)} in • ${todayProb}%`, LEFT, contentTop + 520);
-            
+
             const tomorrowRain = w.daily.precipitation_sum[1];
             const tomorrowProb = w.daily.precipitation_probability_max[1];
             ctx.fillText(`Tomorrow: ${tomorrowRain.toFixed(2)} in • ${tomorrowProb}%`, LEFT, contentTop + 580);
 
-            // Marine column
+            ctx.font = 'italic 40px system-ui';
+            ctx.fillStyle = '#334155';
+
+            let summary = "";
+            if (todayProb >= 60) summary += "Expect rain today. ";
+            else if (todayProb >= 30) summary += "Possible showers today. ";
+            else summary += "Low rain chances today. ";
+
+            if (cur.windspeed_10m >= 20) summary += "Winds remain strong.";
+            else if (cur.windspeed_10m >= 12) summary += "Moderate winds.";
+            else summary += "Light winds.";
+
+            ctx.fillText(summary, LEFT, contentTop + 650);
+
             ctx.font = 'bold 52px system-ui';
             ctx.fillStyle = '#1e40af';
             ctx.fillText('Marine', RIGHT, contentTop);
@@ -129,7 +140,6 @@ jobs:
             ctx.fillText(`Tomorrow → ${(h.wave_height[36]*3.28).toFixed(1)} ft`, RIGHT, contentTop + 310);
             ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, RIGHT, contentTop + 370);
 
-            // 3-day forecast
             ctx.font = '44px system-ui';
             ctx.fillStyle = '#1e293b';
             ['Today','Tomorrow','Day After'].forEach((day,i) => {
@@ -138,7 +148,6 @@ jobs:
               ctx.fillText(`${day} → ${hi}° / ${lo}°`, LEFT, contentTop + 460 + i*72);
             });
 
-            // Footer – safe at the very bottom
             ctx.textAlign = 'center';
             ctx.font = 'italic 38px system-ui';
             ctx.fillStyle = '#64748b';
@@ -155,6 +164,7 @@ jobs:
 
       - name: Commit & Push
         run: |
+          set -e
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
