@@ -101,7 +101,7 @@ jobs:
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, LEFT, y);
             y += 42;
 
-             ctx.font = '30px system-ui';
+            ctx.font = '30px system-ui';
             ctx.fillStyle = '#1e293b';
             ['Tomorrow','Day After'].forEach((day,i) => {
               const hi = Math.round(daily.temperature_2m_max[i+1]);
