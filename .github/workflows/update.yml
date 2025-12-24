@@ -71,12 +71,12 @@ jobs:
             ctx.textBaseline = 'middle';
 
             ctx.fillStyle = '#155e75';
-            ctx.font = '600 52px system-ui';
+            ctx.font = '600 48px system-ui';
             ctx.fillText(astTime.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'}), textX, logoCenterY - 28);
 
             ctx.fillStyle = '#64748b';
-            ctx.font = 'italic 42px system-ui';
-            ctx.fillText(`Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
+            ctx.font = 'italic 38px system-ui';
+            ctx.fillText(`Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
 
             // === MAIN CONTENT ===
             const contentTop = 320;
