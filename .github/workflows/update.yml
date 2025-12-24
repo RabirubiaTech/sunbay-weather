@@ -101,6 +101,14 @@ jobs:
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature)}°F`, LEFT, y);
             y += 42;
 
+             ctx.font = '30px system-ui';
+            ctx.fillStyle = '#1e293b';
+            ['Tomorrow','Day After'].forEach((day,i) => {
+              const hi = Math.round(daily.temperature_2m_max[i+1]);
+              const lo = Math.round(daily.temperature_2m_min[i+1]);
+              ctx.fillText(`${day} → ${hi}° / ${lo}°`, RIGHT, my + i*48);
+            });
+
             ctx.fillText(wmo(cur.weathercode), LEFT, y);
             y += 42;
 
@@ -162,14 +170,6 @@ jobs:
 
             ctx.fillText(`Day After → ${(h.wave_height[60]*3.28).toFixed(1)} ft`, RIGHT, my);
             my += 52;
-
-            ctx.font = '30px system-ui';
-            ctx.fillStyle = '#1e293b';
-            ['Tomorrow','Day After'].forEach((day,i) => {
-              const hi = Math.round(daily.temperature_2m_max[i+1]);
-              const lo = Math.round(daily.temperature_2m_min[i+1]);
-              ctx.fillText(`${day} → ${hi}° / ${lo}°`, RIGHT, my + i*48);
-            });
 
             // FOOTER
             ctx.textAlign = 'center';
