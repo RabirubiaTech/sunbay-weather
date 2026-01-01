@@ -39,10 +39,17 @@ jobs:
 
             const logo = await loadImage("https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RWRoundLogoTransp.png");
 
-            // === MOON ICON ===
-            const moonIndex = Math.round(w.daily.moon_phase[0] * 27);
-            const moonUrl = `https://raw.githubusercontent.com/manifestinteractive/moon-phase-icons/master/svg/moon-phase-${String(moonIndex).padStart(2,'0')}.svg`;
-            const moonIcon = await loadImage(moonUrl);
+            // === MOON ICON (PNG + safe fallback) ===
+            const moonValue = w?.daily?.moon_phase?.[0] ?? 0;
+            const moonIndex = Math.round(moonValue * 27);
+            const moonUrl = `https://raw.githubusercontent.com/manifestinteractive/moon-phase-icons/master/png/64/moon-phase-${String(moonIndex).padStart(2,'0')}.png`;
+
+            let moonIcon = null;
+            try {
+              moonIcon = await loadImage(moonUrl);
+            } catch (e) {
+              console.warn("Moon icon failed to load, continuing without icon.");
+            }
 
             drawCard(w, m, astTime, logo, moonIcon);
             fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer());
@@ -83,11 +90,13 @@ jobs:
             ctx.font = 'italic 38px system-ui';
             ctx.fillText(`Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
 
-            // === MOON PHASE (small, unobtrusive) ===
+            // === MOON PHASE (PNG icon + label) ===
             const moonX = textX;
             const moonY = logoCenterY + 90;
 
-            ctx.drawImage(moonIcon, moonX, moonY, 60, 60);
+            if (moonIcon) {
+              ctx.drawImage(moonIcon, moonX, moonY, 60, 60);
+            }
 
             ctx.fillStyle = '#334155';
             ctx.font = '28px system-ui';
@@ -229,6 +238,6 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card - add moon phase" && git push
+          git diff --staged --quiet || git commit -m "Update weather card - add moon phase PNG" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
