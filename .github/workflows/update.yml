@@ -37,11 +37,6 @@ jobs:
             return (typeof v === "number" ? v : 0).toFixed(digits);
           }
 
-          // === CORRECT MOON PHASE NAME MAPPING (ASTRONOMY API ALREADY PROVIDES NAME) ===
-          function moonPhaseNameFromAPI(name) {
-            return name || "Moon";
-          }
-
           async function run() {
             // WEATHER
             const w = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation,rain,showers&hourly=precipitation_probability,precipitation,rain,showers&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json());
@@ -49,8 +44,8 @@ jobs:
             // MARINE
             const m = await fetch("https://marine-api.open-meteo.com/v1/marine?latitude=18.3258&longitude=-65.6524&hourly=wave_height,wave_direction,wave_period&forecast_days=3&timezone=America/Puerto_Rico").then(r=>r.json());
 
-            // ASTRONOMY (CORRECT MOON PHASE)
-            const astro = await fetch("https://api.open-meteo.com/v1/astronomy?latitude=18.3258&longitude=-65.6524&timezone=America/Puerto_Rico").then(r=>r.json());
+            // ASTRONOMY — CORRECT MOON PHASE
+            const astro = await fetch("https://api.open-meteo.com/v1/astronomy?latitude=18.3258&longitude=-65.6524&daily=moon_phase,moon_phase_name&timezone=America/Puerto_Rico").then(r=>r.json());
 
             const logo = await loadImage("https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RWRoundLogoTransp.png");
 
@@ -71,12 +66,12 @@ jobs:
               console.warn("Moon icon failed to load, continuing without icon.");
             }
 
-            drawCard(w, m, astro, astTime, logo, moonIcon, moonName, moonValue);
+            drawCard(w, m, astTime, logo, moonIcon, moonName, moonValue);
             fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer());
             console.log('Perfect card generated!');
           }
 
-          function drawCard(w, m, astro, astTime, logo, moonIcon, moonName, moonValue) {
+          function drawCard(w, m, astTime, logo, moonIcon, moonName, moonValue) {
             const cur = w.current || {};
             const daily = w.daily || {};
             const h = m.hourly || {};
@@ -250,6 +245,6 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card - astronomy API moon phase" && git push
+          git diff --staged --quiet || git commit -m "Update weather card - astronomy API moon phase fix" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
