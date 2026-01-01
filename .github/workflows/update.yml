@@ -37,6 +37,19 @@ jobs:
             return (typeof v === "number" ? v : 0).toFixed(digits);
           }
 
+          // === CORRECT MOON PHASE NAME MAPPING ===
+          function moonPhaseName(v) {
+            if (v < 0.0625) return "New Moon";
+            if (v < 0.1875) return "Waxing Crescent";
+            if (v < 0.3125) return "First Quarter";
+            if (v < 0.4375) return "Waxing Gibbous";
+            if (v < 0.5625) return "Full Moon";
+            if (v < 0.6875) return "Waning Gibbous";
+            if (v < 0.8125) return "Last Quarter";
+            if (v < 0.9375) return "Waning Crescent";
+            return "New Moon";
+          }
+
           async function run() {
             const w = await fetch("https://api.open-meteo.com/v1/forecast?latitude=18.3258&longitude=-65.6524&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation,rain,showers&hourly=precipitation_probability,precipitation,rain,showers&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,moon_phase&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph").then(r=>r.json());
 
@@ -47,7 +60,9 @@ jobs:
             // === SAFE MOON PHASE EXTRACTION ===
             const moonRaw = w?.daily?.moon_phase?.[0];
             const moonValue = typeof moonRaw === "number" ? moonRaw : 0;
-            const moonIndex = Math.round(moonValue * 27);
+
+            // === CORRECT ICON INDEX (0–27) ===
+            const moonIndex = Math.floor(moonValue * 28) % 28;
 
             // === PNG MOON ICON ===
             const moonUrl = `https://raw.githubusercontent.com/manifestinteractive/moon-phase-icons/master/png/64/moon-phase-${String(moonIndex).padStart(2,'0')}.png`;
@@ -98,7 +113,7 @@ jobs:
             ctx.font = 'italic 38px system-ui';
             ctx.fillText(`Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})} AST`, textX, logoCenterY + 28);
 
-            // === MOON PHASE (SAFE) ===
+            // === MOON PHASE (SAFE + ACCURATE) ===
             const moonX = textX;
             const moonY = logoCenterY + 90;
 
@@ -192,7 +207,7 @@ jobs:
 
             ctx.font = '700 70px system-ui';
             ctx.fillStyle = '#164e63';
-            ctx.fillText(`${safeFixed((h.wave_height?.[12] ?? 0) * 3.28) } ft`, RIGHT, my);
+            ctx.fillText(`${safeFixed((h.wave_height?.[12] ?? 0) * 3.28)} ft`, RIGHT, my);
             my += 70;
 
             ctx.font = '30px system-ui';
@@ -227,14 +242,6 @@ jobs:
             return dirs[Math.round(d/22.5)%16];
           }
 
-          function moonPhaseName(v){
-            const phases=[
-              "New Moon","Waxing Crescent","First Quarter","Waxing Gibbous",
-              "Full Moon","Waning Gibbous","Last Quarter","Waning Crescent"
-            ];
-            return phases[Math.round(v*7)] || "Moon";
-          }
-
           run().catch(e=>{console.error(e);process.exit(1);});
           EOF
 
@@ -246,6 +253,6 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card - safeFixed + moon phase PNG" && git push
+          git diff --staged --quiet || git commit -m "Update weather card - correct moon phase mapping + safeFixed" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
