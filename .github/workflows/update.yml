@@ -40,7 +40,7 @@ jobs:
           // === MOON PHASE NAME FROM FRACTION (0–1) ===
           function moonPhaseName(v) {
             if (typeof v !== "number") return "Unknown";
-            const x = ((v % 1) + 1) % 1; // normalize to [0,1)
+            const x = ((v % 1) + 1) % 1;
             if (x < 0.0625) return "New Moon";
             if (x < 0.1875) return "Waxing Crescent";
             if (x < 0.3125) return "First Quarter";
@@ -71,30 +71,29 @@ jobs:
               "&forecast_days=3&timezone=America/Puerto_Rico"
             ).then(r => r.json());
 
-            // ASTRONOMY — PROVIDE EXPLICIT DATE RANGE
+            // === MET NORWAY (YR.NO) MOON PHASE ===
             const y = astTime.getFullYear();
             const mo = String(astTime.getMonth() + 1).padStart(2, '0');
             const d = String(astTime.getDate()).padStart(2, '0');
             const dateStr = `${y}-${mo}-${d}`;
 
             const astroUrl =
-              "https://api.open-meteo.com/v1/astronomy" +
-              `?latitude=18.3258&longitude=-65.6524` +
-              `&daily=moon_phase` +
-              `&timezone=America/Puerto_Rico` +
-              `&start_date=${dateStr}&end_date=${dateStr}`;
+              `https://api.met.no/weatherapi/sunrise/3.0/` +
+              `?lat=18.3258&lon=-65.6524` +
+              `&date=${dateStr}` +
+              `&offset=-04:00` +
+              `&format=json`;
 
-            const astro = await fetch(astroUrl).then(r => r.json());
-            console.log("Astronomy payload:", JSON.stringify(astro));
+            const astro = await fetch(astroUrl, {
+              headers: {
+                "User-Agent": "RabirubiaWeather/1.0"
+              }
+            }).then(r => r.json());
 
-            const logo = await loadImage(
-              "https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RWRoundLogoTransp.png"
-            );
+            console.log("Yr.no moon payload:", JSON.stringify(astro, null, 2));
 
-            // === SAFE MOON PHASE EXTRACTION FROM ASTRONOMY ===
-            const moonValueRaw = astro?.daily?.moon_phase?.[0];
-            const moonValue = typeof moonValueRaw === "number" ? moonValueRaw : 0;
-            const moonName = moonPhaseName(moonValue);
+            const moonValue = astro?.location?.time?.[0]?.moonphase?.value ?? 0;
+            const moonName  = astro?.location?.time?.[0]?.moonphase?.desc  ?? moonPhaseName(moonValue);
 
             // ICON INDEX FROM FRACTION (0–27)
             const moonIndex = Math.floor(((moonValue % 1) + 1) % 1 * 28) % 28;
@@ -113,6 +112,10 @@ jobs:
             fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer());
             console.log('Perfect card generated!');
           }
+
+          const logo = await loadImage(
+            "https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png/v1/fill/w_234,h_234,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RWRoundLogoTransp.png"
+          );
 
           function drawCard(w, m, astTime, logo, moonIcon, moonName, moonValue) {
             const cur = w.current || {};
@@ -307,6 +310,6 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Update weather card - astronomy moon phase with explicit date" && git push
+          git diff --staged --quiet || git commit -m "Update weather card - MET Norway moon phase" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
