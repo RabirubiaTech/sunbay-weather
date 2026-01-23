@@ -290,9 +290,9 @@ jobs:
 
             // FOOTER
             ctx.textAlign = 'center';
-            ctx.font = 'italic 38px system-ui';
+            ctx.font = 'italic 30px system-ui';
             ctx.fillStyle = '#64748b';
-            ctx.fillText('Powered by Rabirubia-API • Updated every 4 hours', 540, 1035);
+            ctx.fillText('Powered by RabirubiaTech-API • Updated every 4 hours', 540, 1035);
           }
 
           run().catch(e=>{console.error(e);process.exit(1);});
