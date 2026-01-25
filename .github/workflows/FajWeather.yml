@@ -1,4 +1,4 @@
-name: Update Sunbay Weather Card
+name: Update Sunbay Weather Card-New
 
 on:
   schedule:
@@ -105,7 +105,7 @@ jobs:
             );
 
             draw(bg, logo, moonIcon, moonFrac, w, m);
-            fs.writeFileSync("sunbay_marina_forecast.png", canvas.toBuffer());
+            fs.writeFileSync("sunbay_marina_forecast1.png", canvas.toBuffer());
           }
 
           function draw(bg, logo, moonIcon, moonFrac, w, m) {
