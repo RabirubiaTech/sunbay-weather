@@ -100,7 +100,7 @@ jobs:
             );
 
             draw(bg, logo, moonIcon, moonFrac, w, m);
-            fs.writeFileSync("Fajardo_Weather_forecast.png", canvas.toBuffer());
+            fs.writeFileSync("fajardo_weather_forecast.png", canvas.toBuffer());
           }
 
           // -------------------------------------------------------
