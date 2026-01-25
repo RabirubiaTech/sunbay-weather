@@ -1,4 +1,4 @@
-name: Update Sunbay Weather Card-New
+name: Update Fajardo (Inshore) Weather Card
 
 on:
   schedule:
@@ -100,7 +100,7 @@ jobs:
             );
 
             draw(bg, logo, moonIcon, moonFrac, w, m);
-            fs.writeFileSync("sunbay_marina_forecast1.png", canvas.toBuffer());
+            fs.writeFileSync("Fajardo_Weather_forecast.png", canvas.toBuffer());
           }
 
           // -------------------------------------------------------
