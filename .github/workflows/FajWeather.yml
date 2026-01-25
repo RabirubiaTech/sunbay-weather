@@ -103,137 +103,138 @@ jobs:
             fs.writeFileSync("sunbay_marina_forecast1.png", canvas.toBuffer());
           }
 
-          // STACKED LAYOUT WITH SECTION HEADERS
+          // -------------------------------------------------------
+          // UPDATED DRAW FUNCTION WITH FIXED SPACING + ALIGNMENT
+          // -------------------------------------------------------
           function draw(bg, logo, moonIcon, moonFrac, w, m) {
-          if (bg) ctx.drawImage(bg, 0, 0, W, H);
-          ctx.fillStyle = "rgba(0,0,0,0.55)";
-          ctx.fillRect(0, 0, W, H);
-        
-          // Header
-          if (logo) ctx.drawImage(logo, 60, 60, 150, 150);
-        
-          ctx.fillStyle = "#e5f9ff";
-          ctx.textAlign = "left";
-        
-          ctx.font = "600 40px system-ui";
-          ctx.fillText(
-            ast.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
-            240, 115
-          );
-        
-          ctx.font = "italic 28px system-ui";
-          ctx.fillText(
-            `Inshore Fajardo Bay • ${ast.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
-            240, 160
-          );
-        
-          // Moon
-          if (moonIcon) ctx.drawImage(moonIcon, 240, 190, 50, 50);
-          ctx.font = "26px system-ui";
-          ctx.fillText(
-            `Moon: ${moonName(moonFrac)} • ${Math.round(moonFrac * 200)}%`,
-            300, 225
-          );
-        
-          // Rain chance header (aligned with moon text)
-          const prob = w.daily?.precipitation_probability_max?.[0] ?? 0;
-          ctx.font = "italic 26px system-ui";
-          ctx.fillStyle = colorProb(prob);
-          ctx.fillText(
-            `Rain chance today: ${prob}%`,
-            300, 260   // ← aligned with moon text
-          );
-        
-          // WEATHER SECTION HEADER
-          let y = 330;  // ← moved down from 300 to avoid overlap
-          ctx.font = "700 32px system-ui";
-          ctx.fillStyle = "#e5f9ff";
-          ctx.fillText("Weather", 120, y);
-        
-          // WEATHER DATA BLOCK
-          y += 80;  // ← increased padding (was 40)
-          const cur = w.current || {};
-        
-          ctx.font = "800 60px system-ui";
-          ctx.fillStyle = colorTemp(cur.temperature_2m || 0);
-          ctx.fillText(`🌡️ ${Math.round(cur.temperature_2m)}°F`, 120, y);
-        
-          ctx.font = "30px system-ui";
-          ctx.fillStyle = "#e5f9ff";
-          ctx.fillText(`Feels like ${Math.round(cur.apparent_temperature)}°F`, 380, y);
-        
-          y += 55;
-          ctx.fillStyle = colorWind(cur.windspeed_10m || 0);
-          ctx.fillText(`↔ ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, 120, y);
-        
-          y += 45;
-          ctx.fillStyle = colorProb(prob);
-          ctx.fillText(`Rain chance: ${prob}%`, 120, y);
-        
-          y += 45;
-          ctx.fillStyle = "#e5f9ff";
-          ctx.fillText(
-            `Rainfall today: ${(w.daily?.precipitation_sum?.[0] || 0).toFixed(2)} in`,
-            120, y
-          );
-        
-          y += 45;
-          ctx.fillText(
-            `Tomorrow: ${Math.round(w.daily.temperature_2m_max[1])}° / ${Math.round(w.daily.temperature_2m_min[1])}°`,
-            120, y
-          );
-        
-          y += 45;
-          ctx.fillText(
-            `Day After: ${Math.round(w.daily.temperature_2m_max[2])}° / ${Math.round(w.daily.temperature_2m_min[2])}°`,
-            120, y
-          );
-        
-          // MARINE SECTION HEADER
-          y += 80;  // ← increased padding (was 70)
-          ctx.font = "700 32px system-ui";
-          ctx.fillStyle = "#e5f9ff";
-          ctx.fillText("Marine", 120, y);
-        
-          // MARINE DATA BLOCK
-          y += 80;  // ← increased padding (was 40)
-          const h = m.hourly || {};
-          const waveFt = (h.wave_height?.[12] || 0) * 3.28;
-        
-          ctx.font = "700 60px system-ui";
-          ctx.fillStyle = colorWave(waveFt);
-          ctx.fillText(`🌊 ${waveFt.toFixed(1)} ft`, 120, y);
-        
-          y += 50;
-          ctx.font = "30px system-ui";
-          ctx.fillStyle = "#e5f9ff";
-          ctx.fillText(`Direction: ${compass(h.wave_direction?.[12] || 0)}`, 120, y);
-        
-          y += 40;
-          ctx.fillText(`Period: ${h.wave_period?.[12] || 0} s`, 120, y);
-        
-          y += 50;
-          ctx.fillText(
-            `Tomorrow: ${(m.daily.wave_height_max[1] * 3.28).toFixed(1)} ft`,
-            120, y
-          );
-        
-          y += 40;
-          ctx.fillText(
-            `Day After: ${(m.daily.wave_height_max[2] * 3.28).toFixed(1)} ft`,
-            120, y
-          );
-        
-          // Footer
-          ctx.textAlign = "center";
-          ctx.font = "italic 26px system-ui";
-          ctx.fillText(
-            "Powered by RabirubiaTech • Updated every 4 hours",
-            W / 2,
-            H - 40
-          );
-        }
+            if (bg) ctx.drawImage(bg, 0, 0, W, H);
+            ctx.fillStyle = "rgba(0,0,0,0.55)";
+            ctx.fillRect(0, 0, W, H);
 
+            // Header
+            if (logo) ctx.drawImage(logo, 60, 60, 150, 150);
+
+            ctx.fillStyle = "#e5f9ff";
+            ctx.textAlign = "left";
+
+            ctx.font = "600 40px system-ui";
+            ctx.fillText(
+              ast.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
+              240, 115
+            );
+
+            ctx.font = "italic 28px system-ui";
+            ctx.fillText(
+              `Inshore Fajardo Bay • ${ast.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
+              240, 160
+            );
+
+            // Moon
+            if (moonIcon) ctx.drawImage(moonIcon, 240, 190, 50, 50);
+            ctx.font = "26px system-ui";
+            ctx.fillText(
+              `Moon: ${moonName(moonFrac)} • ${Math.round(moonFrac * 200)}%`,
+              300, 225
+            );
+
+            // Rain chance header (aligned with moon text)
+            const prob = w.daily?.precipitation_probability_max?.[0] ?? 0;
+            ctx.font = "italic 26px system-ui";
+            ctx.fillStyle = colorProb(prob);
+            ctx.fillText(
+              `Rain chance today: ${prob}%`,
+              300, 260
+            );
+
+            // WEATHER SECTION HEADER
+            let y = 340;  // moved lower
+            ctx.font = "700 32px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText("Weather", 120, y);
+
+            // WEATHER DATA BLOCK
+            y += 80;  // extra padding
+            const cur = w.current || {};
+
+            ctx.font = "800 60px system-ui";
+            ctx.fillStyle = colorTemp(cur.temperature_2m || 0);
+            ctx.fillText(`🌡️ ${Math.round(cur.temperature_2m)}°F`, 120, y);
+
+            ctx.font = "30px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText(`Feels like ${Math.round(cur.apparent_temperature)}°F`, 380, y);
+
+            y += 55;
+            ctx.fillStyle = colorWind(cur.windspeed_10m || 0);
+            ctx.fillText(`↔ ${Math.round(cur.windspeed_10m)} mph ${compass(cur.winddirection_10m)}`, 120, y);
+
+            y += 45;
+            ctx.fillStyle = colorProb(prob);
+            ctx.fillText(`Rain chance: ${prob}%`, 120, y);
+
+            y += 45;
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText(
+              `Rainfall today: ${(w.daily?.precipitation_sum?.[0] || 0).toFixed(2)} in`,
+              120, y
+            );
+
+            y += 45;
+            ctx.fillText(
+              `Tomorrow: ${Math.round(w.daily.temperature_2m_max[1])}° / ${Math.round(w.daily.temperature_2m_min[1])}°`,
+              120, y
+            );
+
+            y += 45;
+            ctx.fillText(
+              `Day After: ${Math.round(w.daily.temperature_2m_max[2])}° / ${Math.round(w.daily.temperature_2m_min[2])}°`,
+              120, y
+            );
+
+            // MARINE SECTION HEADER
+            y += 90;  // extra padding
+            ctx.font = "700 32px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText("Marine", 120, y);
+
+            // MARINE DATA BLOCK
+            y += 80;  // extra padding
+            const h = m.hourly || {};
+            const waveFt = (h.wave_height?.[12] || 0) * 3.28;
+
+            ctx.font = "700 60px system-ui";
+            ctx.fillStyle = colorWave(waveFt);
+            ctx.fillText(`🌊 ${waveFt.toFixed(1)} ft`, 120, y);
+
+            y += 50;
+            ctx.font = "30px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText(`Direction: ${compass(h.wave_direction?.[12] || 0)}`, 120, y);
+
+            y += 40;
+            ctx.fillText(`Period: ${h.wave_period?.[12] || 0} s`, 120, y);
+
+            y += 50;
+            ctx.fillText(
+              `Tomorrow: ${(m.daily.wave_height_max[1] * 3.28).toFixed(1)} ft`,
+              120, y
+            );
+
+            y += 40;
+            ctx.fillText(
+              `Day After: ${(m.daily.wave_height_max[2] * 3.28).toFixed(1)} ft`,
+              120, y
+            );
+
+            // Footer
+            ctx.textAlign = "center";
+            ctx.font = "italic 26px system-ui";
+            ctx.fillText(
+              "Powered by RabirubiaTech • Updated every 4 hours",
+              W / 2,
+              H - 40
+            );
+          }
 
           run().catch(() => process.exit(0));
           EOF
@@ -245,5 +246,5 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast1.png
-          git diff --staged --quiet || git commit -m "Updated full forecast weather card with section headers"
+          git diff --staged --quiet || git commit -m "Updated full forecast weather card with spacing fixes"
           git push
