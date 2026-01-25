@@ -43,7 +43,6 @@ jobs:
           const now = new Date();
           const ast = new Date(now.getTime() - 4 * 60 * 60 * 1000);
 
-          // ---------- Helpers ----------
           const compass = d =>
             ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
             [Math.round(d / 22.5) % 16];
@@ -108,71 +107,85 @@ jobs:
             fs.writeFileSync("sunbay_marina_forecast1.png", canvas.toBuffer());
           }
 
+          // -------------------------------------------------------
+          // FIXED DRAW FUNCTION (NO OVERLAP, CLEAN TYPOGRAPHY)
+          // -------------------------------------------------------
           function draw(bg, logo, moonIcon, moonFrac, w, m) {
             if (bg) ctx.drawImage(bg, 0, 0, W, H);
             ctx.fillStyle = "rgba(0,0,0,0.55)";
             ctx.fillRect(0, 0, W, H);
 
-            if (logo) ctx.drawImage(logo, 60, 60, 160, 160);
+            if (logo) ctx.drawImage(logo, 60, 60, 150, 150);
 
             ctx.fillStyle = "#e5f9ff";
-            ctx.font = "600 44px system-ui";
+            ctx.textAlign = "left";
+
+            ctx.font = "600 38px system-ui";
             ctx.fillText(
               ast.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
-              250, 120
+              240, 115
             );
 
-            ctx.font = "italic 30px system-ui";
+            ctx.font = "italic 26px system-ui";
             ctx.fillText(
               `Inshore Fajardo Bay • ${ast.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
-              250, 165
+              240, 155
             );
 
-            if (moonIcon) ctx.drawImage(moonIcon, 250, 195, 56, 56);
-            ctx.font = "28px system-ui";
+            if (moonIcon) ctx.drawImage(moonIcon, 240, 185, 50, 50);
+
+            ctx.font = "24px system-ui";
             ctx.fillText(
               `Moon: ${moonName(moonFrac)} • ${Math.round(moonFrac * 200)}%`,
-              320, 225
+              300, 215
             );
 
             const prob = w.daily?.precipitation_probability_max?.[0] ?? 0;
-            ctx.font = "italic bold 32px system-ui";
+            ctx.font = "italic bold 28px system-ui";
             ctx.fillText(
               `📝 ${prob >= 60 ? "Expect rain today." : prob >= 30 ? "Possible showers." : "Low rain chances."}`,
-              250, 270
+              240, 260
             );
 
             const cur = w.current || {};
-            let y = 420;
+            let y = 380;
 
-            ctx.font = "800 66px system-ui";
+            ctx.font = "800 54px system-ui";
             ctx.fillStyle = colorTemp(cur.temperature_2m || 0);
-            ctx.fillText(`🌡️ ${Math.round(cur.temperature_2m || 0)}°F`, 180, y);
+            ctx.fillText(`🌡️ ${Math.round(cur.temperature_2m || 0)}°F`, 160, y);
 
-            ctx.font = "30px system-ui";
-            y += 52;
+            y += 50;
+            ctx.font = "28px system-ui";
             ctx.fillStyle = colorWind(cur.windspeed_10m || 0);
-            ctx.fillText(`💨 ${Math.round(cur.windspeed_10m || 0)} mph ${compass(cur.winddirection_10m || 0)}`, 180, y);
+            ctx.fillText(
+              `💨 ${Math.round(cur.windspeed_10m || 0)} mph ${compass(cur.winddirection_10m || 0)}`,
+              160,
+              y
+            );
 
-            y += 42;
+            y += 40;
             ctx.fillStyle = colorProb(prob);
-            ctx.fillText(`🌧️ Rain chance ${prob}%`, 180, y);
+            ctx.fillText(`🌧️ Rain chance ${prob}%`, 160, y);
 
             const h = m.hourly || {};
             const waveFt = (h.wave_height?.[12] || 0) * 3.28;
 
-            ctx.font = "700 60px system-ui";
+            ctx.font = "700 52px system-ui";
             ctx.fillStyle = colorWave(waveFt);
-            ctx.fillText(`🌊 ${waveFt.toFixed(1)} ft`, 700, 420);
+            ctx.fillText(`🌊 ${waveFt.toFixed(1)} ft`, 680, 380);
 
-            ctx.font = "30px system-ui";
+            ctx.font = "28px system-ui";
             ctx.fillStyle = "#e5f9ff";
-            ctx.fillText(`🧭 ${compass(h.wave_direction?.[12] || 0)}`, 700, 465);
-            ctx.fillText(`⏱️ ${h.wave_period?.[12] || 0} s`, 700, 505);
+            ctx.fillText(`🧭 ${compass(h.wave_direction?.[12] || 0)}`, 680, 430);
+            ctx.fillText(`⏱️ ${h.wave_period?.[12] || 0} s`, 680, 470);
 
             ctx.textAlign = "center";
-            ctx.font = "italic 28px system-ui";
-            ctx.fillText("Powered by RabirubiaTech • Updated every 4 hours", W / 2, H - 30);
+            ctx.font = "italic 24px system-ui";
+            ctx.fillText(
+              "Powered by RabirubiaTech • Updated every 4 hours",
+              W / 2,
+              H - 35
+            );
           }
 
           run().catch(() => process.exit(0));
@@ -185,5 +198,5 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast1.png
-          git diff --staged --quiet || git commit -m "Weather card: icons, colors, moon phase"
+          git diff --staged --quiet || git commit -m "Weather card updated with layout fixes"
           git push
