@@ -103,9 +103,7 @@ jobs:
             fs.writeFileSync("sunbay_marina_forecast1.png", canvas.toBuffer());
           }
 
-          // -------------------------------------------------------
-          // STACKED LAYOUT (WEATHER BLOCK → MARINE BLOCK)
-          // -------------------------------------------------------
+          // STACKED LAYOUT WITH SECTION HEADERS
           function draw(bg, logo, moonIcon, moonFrac, w, m) {
             if (bg) ctx.drawImage(bg, 0, 0, W, H);
             ctx.fillStyle = "rgba(0,0,0,0.55)";
@@ -137,11 +135,24 @@ jobs:
               300, 225
             );
 
-            // WEATHER BLOCK
-            let y = 300;
-            const cur = w.current || {};
+            // Rain chance header line
             const prob = w.daily?.precipitation_probability_max?.[0] ?? 0;
+            ctx.font = "italic 26px system-ui";
+            ctx.fillStyle = colorProb(prob);
+            ctx.fillText(
+              `Rain chance today: ${prob}%`,
+              240, 260
+            );
 
+            // WEATHER BLOCK
+            let y = 320;
+            const cur = w.current || {};
+
+            ctx.font = "700 32px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText("Weather", 120, y);
+
+            y += 40;
             ctx.font = "800 60px system-ui";
             ctx.fillStyle = colorTemp(cur.temperature_2m || 0);
             ctx.fillText(`🌡️ ${Math.round(cur.temperature_2m)}°F`, 120, y);
@@ -160,7 +171,10 @@ jobs:
 
             y += 45;
             ctx.fillStyle = "#e5f9ff";
-            ctx.fillText(`Rainfall today: ${(w.daily?.precipitation_sum?.[0] || 0).toFixed(2)} in`, 120, y);
+            ctx.fillText(
+              `Rainfall today: ${(w.daily?.precipitation_sum?.[0] || 0).toFixed(2)} in`,
+              120, y
+            );
 
             y += 45;
             ctx.fillText(
@@ -176,9 +190,14 @@ jobs:
 
             // MARINE BLOCK
             y += 70;
+            ctx.font = "700 32px system-ui";
+            ctx.fillStyle = "#e5f9ff";
+            ctx.fillText("Marine", 120, y);
+
             const h = m.hourly || {};
             const waveFt = (h.wave_height?.[12] || 0) * 3.28;
 
+            y += 40;
             ctx.font = "700 60px system-ui";
             ctx.fillStyle = colorWave(waveFt);
             ctx.fillText(`🌊 ${waveFt.toFixed(1)} ft`, 120, y);
@@ -223,5 +242,5 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast1.png
-          git diff --staged --quiet || git commit -m "Updated full forecast weather card"
+          git diff --staged --quiet || git commit -m "Updated full forecast weather card with section headers"
           git push
