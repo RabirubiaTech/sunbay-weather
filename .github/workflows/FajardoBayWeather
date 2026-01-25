@@ -184,6 +184,6 @@ jobs:
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git add sunbay_marina_forecast.png
+          git add sunbay_marina_forecast1.png
           git diff --staged --quiet || git commit -m "Weather card: icons, colors, moon phase"
           git push
