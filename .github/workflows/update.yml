@@ -1,4 +1,4 @@
-name: Update Sunbay Weather Card
+name: Update Sunbay Weather Card (original)
 on:
   schedule:
     - cron: '0 */4 * * *'
