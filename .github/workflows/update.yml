@@ -85,7 +85,7 @@ jobs:
           async function run() {
             const w = await fetch(
               "https://api.open-meteo.com/v1/forecast" +
-              "?latitude=18.3258&longitude=-65.6524" +
+              "?latitude=18.1018&longitude=-65.6524" +
               "&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation,rain,showers" +
               "&hourly=precipitation_probability,precipitation,rain,showers" +
               "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max" +
@@ -94,7 +94,7 @@ jobs:
 
             const m = await fetch(
               "https://marine-api.open-meteo.com/v1/marine" +
-              "?latitude=18.3258&longitude=-65.6524" +
+              "?latitude=18.1018&longitude=-65.6524" +
               "&hourly=wave_height,wave_direction,wave_period" +
               "&forecast_days=3&timezone=America/Puerto_Rico"
             ).then(r => r.json());
