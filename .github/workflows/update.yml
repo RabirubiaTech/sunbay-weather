@@ -128,7 +128,7 @@ jobs:
 
           // ---------- Drawing ----------
           function drawCard(w, m, astTime, logo, moonIcon, moonPhase, moonIllum) {
-            const cur = w.current || {};
+            const cur = data.current || {};
             const daily = w.daily || {};
             const h = m.hourly || {};
 
