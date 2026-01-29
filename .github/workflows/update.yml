@@ -18,21 +18,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Clean old artifacts
+      - name: Clean previous artifacts
         run: |
           rm -f generate.cjs
           rm -f sunbay_marina_forecast.png
 
-      - name: Install dependencies
-        run: |
-          npm install canvas node-fetch@3
+      - name: Install canvas
+        run: npm install canvas
 
       - name: Generate weather card
         run: |
           cat << 'EOF' > generate.cjs
-          import fetch from "node-fetch";
-          import { createCanvas, loadImage } from "canvas";
-          import fs from "fs";
+          const { createCanvas, loadImage } = require("canvas");
+          const fs = require("fs");
 
           const WIDTH = 1080;
           const HEIGHT = 1080;
@@ -44,133 +42,87 @@ jobs:
             return d[Math.round(deg / 45) % 8];
           }
 
-          function safeFixed(v) {
-            return Number.isFinite(v) ? v.toFixed(1) : "0.0";
-          }
-
           function wmo(code = 0) {
             const map = {
               0:"Clear",1:"Mostly Clear",2:"Partly Cloudy",3:"Overcast",
               45:"Fog",48:"Fog",
-              51:"Drizzle",53:"Drizzle",55:"Drizzle",
               61:"Rain",63:"Rain",65:"Rain",
               80:"Showers",81:"Showers",82:"Heavy Showers"
             };
             return map[code] || "Unknown";
           }
 
-          function drawCard(w, m, astTime, logo, moonIcon, moonPhase, moonIllum) {
+          function drawCard(w, astTime, logo) {
             const cur = w.current || {};
-            const h = m.hourly || {};
 
-            const grad = ctx.createLinearGradient(0,0,0,1080);
+            const grad = ctx.createLinearGradient(0,0,0,HEIGHT);
             grad.addColorStop(0,"#a5f3fc");
             grad.addColorStop(1,"#ecfeff");
             ctx.fillStyle = grad;
-            ctx.fillRect(0,0,1080,1080);
+            ctx.fillRect(0,0,WIDTH,HEIGHT);
 
             const margin = 60;
-            const logoSize = 200;
-            ctx.drawImage(logo, margin, margin, logoSize, logoSize);
-
-            const textX = margin + logoSize + 50;
-            const centerY = margin + logoSize / 2;
-
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
+            ctx.drawImage(logo, margin, margin, 200, 200);
 
             ctx.fillStyle = "#155e75";
-            ctx.font = "600 48px system-ui";
+            ctx.font = "600 46px system-ui";
             ctx.fillText(
               astTime.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
-              textX, centerY - 28
+              320, 120
             );
 
             ctx.fillStyle = "#64748b";
-            ctx.font = "italic 38px system-ui";
+            ctx.font = "italic 32px system-ui";
             ctx.fillText(
-              `Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
-              textX, centerY + 28
+              `Inshore Fajardo Bay • ${astTime.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
+              320, 170
             );
 
-            if (moonIcon) ctx.drawImage(moonIcon, textX, centerY + 60, 60, 60);
-            ctx.fillStyle = "#334155";
-            ctx.font = "28px system-ui";
-            ctx.fillText(
-              `Moon Phase: ${moonPhase} • ${Math.round(moonIllum * 100)}%`,
-              textX + 75, centerY + 90
-            );
-
-            const LEFT = 220;
-            const RIGHT = 700;
-            let y = 440;
-
-            ctx.fillStyle = "#1e40af";
-            ctx.font = "bold 46px system-ui";
-            ctx.fillText("Weather", LEFT, y);
-
-            y += 90;
-            ctx.font = "900 70px system-ui";
+            let y = 460;
             ctx.fillStyle = "#164e63";
-            ctx.fillText(`${Math.round(cur.temperature_2m ?? 0)}°`, LEFT, y);
+            ctx.font = "900 80px system-ui";
+            ctx.fillText(`${Math.round(cur.temperature_2m ?? 0)}°`, 240, y);
 
-            y += 70;
-            ctx.font = "30px system-ui";
+            y += 80;
+            ctx.font = "34px system-ui";
             ctx.fillStyle = "#475569";
-            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`, LEFT, y);
+            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`, 240, y);
 
             y += 46;
             ctx.fillStyle = "#1e293b";
-            ctx.fillText(wmo(cur.weathercode), LEFT, y);
+            ctx.fillText(wmo(cur.weathercode), 240, y);
 
-            y += 42;
+            y += 46;
             ctx.fillText(
               `Wind ${Math.round(cur.windspeed_10m ?? 0)} mph ${compass(cur.winddirection_10m ?? 0)}`,
-              LEFT, y
+              240, y
             );
 
-            let my = 440;
-            ctx.fillStyle = "#1e40af";
-            ctx.font = "bold 46px system-ui";
-            ctx.fillText("Marine", RIGHT, my);
-
-            my += 90;
-            ctx.font = "700 70px system-ui";
-            ctx.fillStyle = "#164e63";
-            ctx.fillText(`${safeFixed((h.wave_height?.[12] ?? 0) * 3.28)} ft`, RIGHT, my);
-
-            my += 70;
-            ctx.font = "30px system-ui";
-            ctx.fillStyle = "#475569";
-            ctx.fillText(`Today • ${compass(h.wave_direction?.[12] || 0)}`, RIGHT, my);
-
             ctx.textAlign = "center";
-            ctx.font = "italic 30px system-ui";
+            ctx.font = "italic 28px system-ui";
             ctx.fillStyle = "#64748b";
             ctx.fillText(
-              "Powered by RabirubiaTech-API • Updated every 4 hours",
-              540, 1035
+              "Powered by RabirubiaTech • Updated every 4 hours",
+              WIDTH / 2, HEIGHT - 40
             );
           }
 
           async function run() {
-            const w = await fetch(
+            const res = await fetch(
               "https://api.open-meteo.com/v1/forecast" +
               "?latitude=18.1018&longitude=-65.6524" +
-              "&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation,rain,showers" +
-              "&hourly=precipitation_probability,precipitation,rain,showers,wave_height,wave_direction" +
+              "&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m" +
               "&timezone=America/Puerto_Rico&temperature_unit=fahrenheit&wind_speed_unit=mph"
-            ).then(r => r.json());
-
-            const m = w;
-            const logo = await loadImage("./logo.png").catch(() => null);
-            const moonIcon = null;
-
-            drawCard(
-              w, m, new Date(), logo, moonIcon, "Waxing Crescent", 0.42
             );
+            const w = await res.json();
 
-            fs.writeFileSync("sunbay_marina_forecast.png", canvas.toBuffer("image/png"));
+            const logo = await loadImage("./logo.png");
+            drawCard(w, new Date(), logo);
+
+            fs.writeFileSync(
+              "sunbay_marina_forecast.png",
+              canvas.toBuffer("image/png")
+            );
           }
 
           run();
