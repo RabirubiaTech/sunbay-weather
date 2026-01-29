@@ -19,7 +19,7 @@ jobs:
           set -e
           npm install canvas node-fetch@2
 
-      - name: Generate Weather Card
+      - name: Generate Perfect Weather Card
         run: |
           set -e
           cat > generate.cjs << 'EOF'
@@ -33,8 +33,40 @@ jobs:
           const now = new Date();
           const astTime = new Date(now.getTime() - 4 * 60 * 60 * 1000);
 
+          // ---------- Helpers ----------
           function safeFixed(v, d = 1) {
-            return (typeof v === 'number' ? v : 0).toFixed(d);
+            return (typeof v === "number" ? v : 0).toFixed(d);
+          }
+
+          function moonPhaseFraction(date) {
+            const synodicMonth = 29.53058867;
+            const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
+            const days = (date.getTime() - ref) / 86400000;
+            return (days / synodicMonth) % 1;
+          }
+
+          function moonPhaseName(x) {
+            if (x < 0.03) return "New Moon";
+            if (x < 0.22) return "Waxing Crescent";
+            if (x < 0.28) return "First Quarter";
+            if (x < 0.47) return "Waxing Gibbous";
+            if (x < 0.53) return "Full Moon";
+            if (x < 0.72) return "Waning Gibbous";
+            if (x < 0.78) return "Last Quarter";
+            if (x < 0.97) return "Waning Crescent";
+            return "New Moon";
+          }
+
+          function moonIllumination(x) {
+            return x <= 0.5 ? x * 2 : (1 - x) * 2;
+          }
+
+          function wmo(c) {
+            return {
+              0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",
+              45:"Fog",61:"Rain",63:"Rain",65:"Heavy rain",
+              80:"Showers",95:"Thunderstorm"
+            }[c] || "Weather";
           }
 
           function compass(d) {
@@ -42,13 +74,7 @@ jobs:
             return dirs[Math.round(d / 22.5) % 16];
           }
 
-          function wmo(c) {
-            return {
-              0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Cloudy",
-              45:"Fog",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Thunderstorm"
-            }[c] || "Weather";
-          }
-
+          // ---------- Main ----------
           async function run() {
             const w = await fetch(
               "https://api.open-meteo.com/v1/forecast" +
@@ -66,26 +92,65 @@ jobs:
               "&forecast_days=3&timezone=America/Puerto_Rico"
             ).then(r => r.json());
 
+            const midnightAST = new Date(astTime);
+            midnightAST.setHours(0,0,0,0);
+
+            const frac = moonPhaseFraction(midnightAST);
+            const moonPhase = moonPhaseName(frac);
+            const moonIllum = moonIllumination(frac);
+            const moonIndex = Math.floor(frac * 28) % 28;
+
+            let moonIcon = null;
+            try {
+              moonIcon = await loadImage(
+                `https://raw.githubusercontent.com/manifestinteractive/moon-phase-icons/master/png/64/moon-phase-${String(moonIndex).padStart(2,'0')}.png`
+              );
+            } catch {}
+
             const logo = await loadImage(
               "https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png"
             );
 
-            drawCard(w, m, astTime, logo);
-            fs.writeFileSync('sunbay_marina_forecast.png', canvas.toBuffer());
+            drawCard(w, m, astTime, logo, moonIcon, moonPhase, moonIllum);
+            fs.writeFileSync("sunbay_marina_forecast.png", canvas.toBuffer());
           }
 
-          function drawCard(w, m, astTime, logo) {
-            const cur = w.current || {};     // ✅ FIX
+          // ---------- Drawing ----------
+          function drawCard(w, m, astTime, logo, moonIcon, moonPhase, moonIllum) {
+            const cur = w.current || {};   // ✅ FIX
             const daily = w.daily || {};
             const h = m.hourly || {};
 
-            ctx.fillStyle = '#ecfeff';
-            ctx.fillRect(0, 0, 1080, 1080);
+            const grad = ctx.createLinearGradient(0,0,0,1080);
+            grad.addColorStop(0, '#a5f3fc');
+            grad.addColorStop(1, '#ecfeff');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,1080,1080);
 
             ctx.drawImage(logo, 60, 60, 200, 200);
 
+            ctx.fillStyle = '#155e75';
+            ctx.font = '600 48px system-ui';
+            ctx.fillText(
+              astTime.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }),
+              310, 140
+            );
+
+            ctx.font = 'italic 38px system-ui';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(
+              `Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,
+              310, 190
+            );
+
+            if (moonIcon) ctx.drawImage(moonIcon, 310, 230, 60, 60);
+            ctx.font = '28px system-ui';
+            ctx.fillStyle = '#334155';
+            ctx.fillText(`Moon Phase: ${moonPhase} • ${Math.round(moonIllum * 100)}%`, 385, 260);
+
             const LEFT = 220;
-            let y = 500;
+            const RIGHT = 700;
+            let y = 530;
 
             ctx.font = '900 70px system-ui';
             ctx.fillStyle = '#164e63';
@@ -96,15 +161,20 @@ jobs:
             ctx.fillStyle = '#475569';
             ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`, LEFT, y);
 
-            y += 50;
+            y += 42;
             ctx.fillStyle = '#1e293b';
             ctx.fillText(wmo(cur.weathercode), LEFT, y);
 
-            y += 40;
+            y += 42;
             ctx.fillText(
               `Wind ${Math.round(cur.windspeed_10m ?? 0)} mph ${compass(cur.winddirection_10m ?? 0)}`,
               LEFT, y
             );
+
+            ctx.textAlign = 'center';
+            ctx.font = 'italic 30px system-ui';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('Powered by RabirubiaTech-API • Updated every 4 hours', 540, 1035);
           }
 
           run().catch(e => { console.error(e); process.exit(1); });
@@ -118,6 +188,6 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add sunbay_marina_forecast.png
-          git diff --staged --quiet || git commit -m "Fix current temperature source" && git push
+          git diff --staged --quiet || git commit -m "Fix current temperature and restore full card" && git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
