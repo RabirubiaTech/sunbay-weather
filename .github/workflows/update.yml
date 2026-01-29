@@ -10,18 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Clean previous artifacts
-        run: |
-          rm -f generate.cjs
-          rm -f sunbay_marina_forecast.png
 
       - name: Install canvas
         run: npm install canvas
@@ -37,19 +30,19 @@ jobs:
           const canvas = createCanvas(WIDTH, HEIGHT);
           const ctx = canvas.getContext("2d");
 
-          function compass(deg = 0) {
-            const d = ["N","NE","E","SE","S","SW","W","NW"];
-            return d[Math.round(deg / 45) % 8];
+          function compass(d=0){
+            const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+            return dirs[Math.round(d/22.5)%16];
           }
 
-          function wmo(code = 0) {
-            const map = {
-              0:"Clear",1:"Mostly Clear",2:"Partly Cloudy",3:"Overcast",
+          function wmo(c=0){
+            const m={
+              0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",
               45:"Fog",48:"Fog",
-              61:"Rain",63:"Rain",65:"Rain",
-              80:"Showers",81:"Showers",82:"Heavy Showers"
+              61:"Rain",63:"Rain",65:"Heavy rain",
+              80:"Showers",81:"Showers",82:"Heavy showers"
             };
-            return map[code] || "Unknown";
+            return m[c]||"Weather";
           }
 
           function drawCard(w, astTime, logo) {
@@ -61,53 +54,53 @@ jobs:
             ctx.fillStyle = grad;
             ctx.fillRect(0,0,WIDTH,HEIGHT);
 
-            const margin = 60;
-            ctx.drawImage(logo, margin, margin, 200, 200);
+            // LOGO
+            if (logo) ctx.drawImage(logo, 60, 60, 200, 200);
 
-            ctx.fillStyle = "#155e75";
-            ctx.font = "600 46px system-ui";
+            ctx.fillStyle="#155e75";
+            ctx.font="600 46px system-ui";
             ctx.fillText(
               astTime.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
-              320, 120
+              320,120
             );
 
-            ctx.fillStyle = "#64748b";
-            ctx.font = "italic 32px system-ui";
+            ctx.fillStyle="#64748b";
+            ctx.font="italic 32px system-ui";
             ctx.fillText(
               `Inshore Fajardo Bay • ${astTime.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} AST`,
-              320, 170
+              320,170
             );
 
-            let y = 460;
-            ctx.fillStyle = "#164e63";
-            ctx.font = "900 80px system-ui";
-            ctx.fillText(`${Math.round(cur.temperature_2m ?? 0)}°`, 240, y);
+            let y=460;
+            ctx.font="900 80px system-ui";
+            ctx.fillStyle="#164e63";
+            ctx.fillText(`${Math.round(cur.temperature_2m ?? 0)}°`,240,y);
 
-            y += 80;
-            ctx.font = "34px system-ui";
-            ctx.fillStyle = "#475569";
-            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`, 240, y);
+            y+=80;
+            ctx.font="34px system-ui";
+            ctx.fillStyle="#475569";
+            ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`,240,y);
 
-            y += 46;
-            ctx.fillStyle = "#1e293b";
-            ctx.fillText(wmo(cur.weathercode), 240, y);
+            y+=46;
+            ctx.fillStyle="#1e293b";
+            ctx.fillText(wmo(cur.weathercode),240,y);
 
-            y += 46;
+            y+=46;
             ctx.fillText(
               `Wind ${Math.round(cur.windspeed_10m ?? 0)} mph ${compass(cur.winddirection_10m ?? 0)}`,
-              240, y
+              240,y
             );
 
-            ctx.textAlign = "center";
-            ctx.font = "italic 28px system-ui";
-            ctx.fillStyle = "#64748b";
+            ctx.textAlign="center";
+            ctx.font="italic 28px system-ui";
+            ctx.fillStyle="#64748b";
             ctx.fillText(
               "Powered by RabirubiaTech • Updated every 4 hours",
-              WIDTH / 2, HEIGHT - 40
+              WIDTH/2, HEIGHT-40
             );
           }
 
-          async function run() {
+          async function run(){
             const res = await fetch(
               "https://api.open-meteo.com/v1/forecast" +
               "?latitude=18.1018&longitude=-65.6524" +
@@ -116,25 +109,28 @@ jobs:
             );
             const w = await res.json();
 
-            const logo = await loadImage("./logo.png");
-            drawCard(w, new Date(), logo);
+            let logo=null;
+            try {
+              logo = await loadImage(
+                "https://static.wixstatic.com/media/80c250_b1146919dfe046429a96648c59e2c413~mv2.png"
+              );
+            } catch {
+              console.warn("Logo failed to load — continuing without it");
+            }
 
-            fs.writeFileSync(
-              "sunbay_marina_forecast.png",
-              canvas.toBuffer("image/png")
-            );
+            drawCard(w, new Date(), logo);
+            fs.writeFileSync("sunbay_marina_forecast.png", canvas.toBuffer("image/png"));
           }
 
-          run();
+          run().catch(e=>{console.error(e);process.exit(1);});
           EOF
 
-      - name: Run generator
-        run: node generate.cjs
+          node generate.cjs
 
-      - name: Commit image
+      - name: Commit & push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add sunbay_marina_forecast.png
-          git commit -m "Update Sunbay weather card" || echo "No changes"
+          git commit -m "Update weather card" || echo "No changes"
           git push
