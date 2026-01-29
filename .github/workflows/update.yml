@@ -104,16 +104,109 @@ jobs:
             fs.writeFileSync("sunbay_marina_forecast.png",canvas.toBuffer());
           }
 
-          function drawCard(w,m,astTime,logo,moonIcon,moonPhase,moonIllum){
-            const cur = w.current || {};   // ✅ ONLY FIX
-            const daily=w.daily||{};
-            const h=m.hourly||{};
+          function drawCard(w, m, astTime, logo, moonIcon, moonPhase, moonIllum) {
+          const cur = w.current || {};
+          const daily = w.daily || {};
+          const h = m.hourly || {};
+        
+          // Background
+          const grad = ctx.createLinearGradient(0,0,0,1080);
+          grad.addColorStop(0, '#a5f3fc');
+          grad.addColorStop(1, '#ecfeff');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0,0,1080,1080);
+        
+          // Logo
+          const logoSize = 200;
+          const margin = 60;
+          ctx.drawImage(logo, margin, margin, logoSize, logoSize);
+        
+          // Header
+          const textX = margin + logoSize + 50;
+          const centerY = margin + logoSize / 2;
+        
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+        
+          ctx.fillStyle = '#155e75';
+          ctx.font = '600 48px system-ui';
+          ctx.fillText(
+            astTime.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' }),
+            textX, centerY - 28
+          );
+        
+          ctx.fillStyle = '#64748b';
+          ctx.font = 'italic 38px system-ui';
+          ctx.fillText(
+            `Inshore-Fajardo Bay, PR • ${astTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} AST`,
+            textX, centerY + 28
+          );
+        
+          // Moon row
+          if (moonIcon) ctx.drawImage(moonIcon, textX, centerY + 60, 60, 60);
+          ctx.fillStyle = '#334155';
+          ctx.font = '28px system-ui';
+          ctx.fillText(
+            `Moon Phase: ${moonPhase} • ${Math.round(moonIllum * 100)}%`,
+            textX + 75, centerY + 90
+          );
+        
+          // Columns
+          const LEFT = 220;
+          const RIGHT = 700;
+          let y = 440;
+        
+          // Weather column
+          ctx.fillStyle = '#1e40af';
+          ctx.font = 'bold 46px system-ui';
+          ctx.fillText('Weather', LEFT, y);
+        
+          y += 90;
+          ctx.font = '900 70px system-ui';
+          ctx.fillStyle = '#164e63';
+          ctx.fillText(`${Math.round(cur.temperature_2m ?? 0)}°`, LEFT, y);
+        
+          y += 70;
+          ctx.font = '30px system-ui';
+          ctx.fillStyle = '#475569';
+          ctx.fillText(`Feels ${Math.round(cur.apparent_temperature ?? 0)}°F`, LEFT, y);
+        
+          y += 46;
+          ctx.fillStyle = '#1e293b';
+          ctx.fillText(wmo(cur.weathercode), LEFT, y);
+        
+          y += 42;
+          ctx.fillText(
+            `Wind ${Math.round(cur.windspeed_10m ?? 0)} mph ${compass(cur.winddirection_10m ?? 0)}`,
+            LEFT, y
+          );
+        
+          // Marine column
+          let my = 440;
+          ctx.fillStyle = '#1e40af';
+          ctx.font = 'bold 46px system-ui';
+          ctx.fillText('Marine', RIGHT, my);
+        
+          my += 90;
+          ctx.font = '700 70px system-ui';
+          ctx.fillStyle = '#164e63';
+          ctx.fillText(`${safeFixed((h.wave_height?.[12] ?? 0) * 3.28)} ft`, RIGHT, my);
+        
+          my += 70;
+          ctx.font = '30px system-ui';
+          ctx.fillStyle = '#475569';
+          ctx.fillText(`Today • ${compass(h.wave_direction?.[12] || 0)}`, RIGHT, my);
+        
+          // Footer
+          ctx.textAlign = 'center';
+          ctx.font = 'italic 30px system-ui';
+          ctx.fillStyle = '#64748b';
+          ctx.fillText(
+            'Powered by RabirubiaTech-API • Updated every 4 hours',
+            540, 1035
+          );
+        }
 
-            const grad=ctx.createLinearGradient(0,0,0,1080);
-            grad.addColorStop(0,'#a5f3fc');
-            grad.addColorStop(1,'#ecfeff');
-            ctx.fillStyle=grad;
-            ctx.fillRect(0,0,1080,1080);
 
             // EVERYTHING BELOW IS UNCHANGED FROM YOUR ORIGINAL FILE
             // (Weather column, marine column, header, footer, forecasts)
